@@ -1,5 +1,5 @@
 import random
-from math import copysign, degrees, radians, sin, cos
+from math import copysign, degrees, radians, sin, cos, sqrt
 
 import pygame
 from pygame.math import Vector2
@@ -146,6 +146,34 @@ class Car:
 
     def deactivate_car(self):
         self.activated = False
+
+    def calculate_distace_to_wall(self,wall, position):
+        x, y = self.distance_points_x_y[position]
+
+        ptl = wall.rect.topleft
+        ptr = wall.rect.topright
+        pbl = wall.rect.bottomleft
+        pbr = wall.rect.bottomright
+
+        p_array = [ptl, ptr, pbl, pbr]
+
+        dist_array = []
+
+        for point in p_array:
+            dist = sqrt((x - point[0]) ** 2 + (y - point[1]) ** 2)
+            dist_array.append((dist, point))
+
+        dist_array.sort(key=lambda tup: tup[0])
+
+        p1 = dist_array[0][1]
+        p2 = dist_array[1][1]
+
+        a = p1[1] - p2[1]
+        b = p2[0] - p1[0]
+        c = p1[0] * p2[1] - p2[0] * p1[1]
+
+        dist = (abs(a * x + b * y + c)) / (sqrt(a ** 2 + b ** 2))
+        print(position,dist)
 
 
 class Wall(object):

@@ -7,37 +7,6 @@ from GameObjects import Car, Wall
 import math
 
 
-# def rotate(origin, point, angle):
-#     value_ang = angle if angle < 0 else angle
-#
-#     value = (5, 0) if (value_ang % 360 >= 260 and value_ang % 360 < 360) else (5, 0) if (
-#             value_ang % 360 >= 0 and value_ang % 360 < 25) else (0, 0)
-#
-#     ox, oy = origin
-#     px, py = (point[0] - value[0], point[1] - value[1])
-#
-#     angle = radians(angle)
-#
-#     qx = ox + math.cos(angle) * (px - ox) - math.sin(angle) * (py - oy)
-#     qy = oy + math.sin(angle) * (px - ox) * -1 + math.cos(angle) * (py - oy) * -1
-#     return qx, qy
-#
-#     # rotate and blit the image
-#
-#     # draw rectangle around the image
-#     # pygame.draw.rect(surf, (255, 0, 0), (*origin, *rotated_image.get_size()), 2)
-#
-#
-# def make_recs(screen, car, cords, color):
-#     circle_rotate_position = rotate(car.position_absolute,
-#                                     cords, car.angle)
-#
-#     rec = pygame.Rect((int(circle_rotate_position[0]), int(circle_rotate_position[1])), (10, 10))
-#
-#     return rec
-#
-#     # pygame.draw.rect(screen, color, rec)
-
 
 class Game:
     def __init__(self):
@@ -62,7 +31,7 @@ class Game:
 
         pos = (0, 0)
 
-        car = Car(pos, car_image=car_image, scale_percent=scale_percent)
+        car = Car(pos, car_image=car_image, scale_percent=scale_percent, distance_rects_distance=20)
 
         walls = []
         walls.append(Wall((600, 600), (128, 64)))
@@ -88,33 +57,45 @@ class Game:
 
                 car.change_angle(pressed, dt)
 
-                # for rec in car.collision_rects:
-                #     for wall in walls:
-                #         if rec.colliderect(wall.rect):
-                #             car.deactivate_car()
-                #             break
+                for rec in car.collision_rects:
+                    for wall in walls:
+                        if rec.colliderect(wall.rect):
+                            car.deactivate_car()
+                            break
 
                 for i, rec in enumerate(car.distance_rects):
                     for wall in walls:
-                        if i == 0:
+                        # if i == 0:
                             if rec.colliderect(wall.rect):
-                                x, y = car.distance_points_x_y[i]
+                                car.calculate_distace_to_wall(wall,i)
+                                # x, y = car.distance_points_x_y[i]
+                                #
+                                # ptl = wall.rect.topleft
+                                # ptr = wall.rect.topright
+                                # pbl = wall.rect.bottomleft
+                                # pbr = wall.rect.bottomright
+                                #
+                                # p_array = [ptl, ptr, pbl, pbr]
+                                #
+                                # dist_array = []
+                                #
+                                # for point in p_array:
+                                #     dist = math.sqrt((x - point[0]) ** 2 + (y - point[1]) ** 2)
+                                #     dist_array.append((dist, point))
+                                #
+                                # dist_array.sort(key=lambda tup: tup[0])
+                                #
+                                # p1 = dist_array[0][1]
+                                # p2 = dist_array[1][1]
+                                #
+                                # a = p1[1] - p2[1]
+                                # b = p2[0] - p1[0]
+                                # c = p1[0] * p2[1] - p2[0] * p1[1]
+                                #
+                                # dist = (abs(a * x + b * y + c)) / (math.sqrt(a ** 2 + b ** 2))
 
-                                pygame.draw.circle(self.screen, (255, 0, 0), (x, y ), 4)
-                                rect_x = int(wall.rect.x + wall.rect.width / 2)
-                                rect_y = int(wall.rect.y + wall.rect.height / 2)
-                                # rect_x = wall.rect.x
-                                # rect_y = wall.rect.y
-                                # pygame.draw.circle(self.screen, (255, 0, 0), (rect_x, rect_y), 1)
-                                # print(x, y, wall.rect.x,  wall.rect.y )
-                                # print()
-                                # (x - wall.rect.x)
-                                dist = math.sqrt((x - rect_x) ** 2 + (
-                                        y - rect_y) ** 2)
 
-                                # dist = math.hypot(x - wall.rect.x, y - wall.rect.y)
-                                print(i,dist)
-                                # dist = math.hypot(-wall.x, y1-y2)
+
                             # break
 
             car.show_image(self.screen)
