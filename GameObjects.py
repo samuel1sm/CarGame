@@ -5,64 +5,91 @@ import pygame
 from pygame.math import Vector2
 
 
-def blitRotate(surf, image, pos, originPos, angle):
-    # calcaulate the axis aligned bounding box of the rotated image
-    w, h = image.get_size()
-    box = [pygame.math.Vector2(p) for p in [(0, 0), (w, 0), (w, -h), (0, -h)]]
-    box_rotate = [p.rotate(angle) for p in box]
-    min_box = (min(box_rotate, key=lambda p: p[0])[0], min(box_rotate, key=lambda p: p[1])[1])
-    max_box = (max(box_rotate, key=lambda p: p[0])[0], max(box_rotate, key=lambda p: p[1])[1])
-
-    # calculate the translation of the pivot
-    pivot = pygame.math.Vector2(originPos[0], -originPos[1])
-    pivot_rotate = pivot.rotate(angle)
-    pivot_move = pivot_rotate - pivot
-
-    # calculate the upper left origin of the rotated image
-    origin = (pos[0] - originPos[0] + min_box[0] - pivot_move[0], pos[1] - originPos[1] - max_box[1] + pivot_move[1])
-
-    # get a rotated image
-    rotated_image = pygame.transform.rotate(image, angle)
-
-    # rotate and blit the image
-    surf.blit(rotated_image, origin)
-
-    # draw rectangle around the image
-    pygame.draw.rect(surf, (255, 0, 0), (*origin, *rotated_image.get_size()), 2)
-
-
 class Car:
-    def __init__(self, pos, car_image, angle=0.0, length=4):
+    def __init__(self, pos, car_image, angle=0.0, distance_rects_distance=20, scale_percent=0.5):
         self.position_absolute = Vector2(pos[0], pos[1])
 
         self.angle = angle
         self.left_origin = 0
         self.activated = True
-
-        self.front_points = []
-        self.front_recs = []
-
+        self.scale_percent = scale_percent
+        self.distance_points_x_y = []
+        self.collision_rects = []
+        self.distance_rects = []
+        self.distance_rects_distance = distance_rects_distance
         self.car_image = car_image
 
-    def make_recs(self):
-        self.front_points = []
-        self.front_recs = []
+    def make_collision_recs(self):
+        self.distance_points_x_y = []
 
-        self.front_points.append((int(self.position_absolute[0] + self.car_image.get_rect().width / 2),
-                                  int(self.position_absolute[1])))
+        aux = []
 
-        self.front_points.append((int(self.position_absolute[0] + self.car_image.get_rect().width / 2),
-                                  int(self.position_absolute[1]) + self.car_image.get_rect().height / 4))
+        self.collision_rects = []
 
-        self.front_points.append((int(self.position_absolute[0] + self.car_image.get_rect().width / 2),
-                                  int(self.position_absolute[1]) - self.car_image.get_rect().height / 4))
+        aux.append((int(self.position_absolute[0] + self.car_image.get_rect().width / 2),
+                                         int(self.position_absolute[1])))
 
-        for cords in self.front_points:
+        aux.append((int(self.position_absolute[0] + self.car_image.get_rect().width / 2),
+                                         int(self.position_absolute[1]) + self.car_image.get_rect().height * 3 / 8))
+
+        aux.append((int(self.position_absolute[0] + self.car_image.get_rect().width / 2),
+                                         int(self.position_absolute[1]) - self.car_image.get_rect().height * 3 / 8))
+
+        aux.append(
+            (int(self.position_absolute[0] + self.car_image.get_rect().width * 3 / 8),
+             int(self.position_absolute[1]) + self.car_image.get_rect().height / 2))
+
+        aux.append(
+            (int(self.position_absolute[0] + self.car_image.get_rect().width * 3 / 8),
+             int(self.position_absolute[
+                     1]) - self.car_image.get_rect().height / 2))
+
+        for cords in aux:
             circle_rotate_position = self.rotate(cords)
 
-            rec = pygame.Rect((int(circle_rotate_position[0]), int(circle_rotate_position[1])), (10, 10))
+            rec = pygame.Rect((int(circle_rotate_position[0]), int(circle_rotate_position[1])),
+                              (10 * self.scale_percent, 10 * self.scale_percent))
 
-            self.front_recs.append(rec)
+            self.distance_points_x_y.append ((int(circle_rotate_position[0]), int(circle_rotate_position[1])))
+            self.collision_rects.append(rec)
+
+        # return rec
+
+        # pygame.draw.rect(screen, color, rec)
+
+    def make_distance_recs(self):
+        distance_points_x_y = []
+        self.distance_rects = []
+
+        distance_points_x_y.append(
+            (int(self.position_absolute[0] + self.car_image.get_rect().width / 2 + self.distance_rects_distance),
+             int(self.position_absolute[1])))
+
+        distance_points_x_y.append((int(self.position_absolute[0] + self.car_image.get_rect().width * 3 / 8),
+                                    int(self.position_absolute[1]) + self.car_image.get_rect().height * 3 / 8 +
+                                    self.distance_rects_distance))
+
+        distance_points_x_y.append((int(self.position_absolute[0] + self.car_image.get_rect().width * 3 / 8),
+                                    int(self.position_absolute[1]) - self.car_image.get_rect().height * 3 / 8 -
+                                    self.distance_rects_distance))
+
+        distance_points_x_y.append(
+            (int(self.position_absolute[0] + self.car_image.get_rect().width * 3 / 8 + self.distance_rects_distance),
+             int(self.position_absolute[
+                     1]) + self.car_image.get_rect().height / 2 + self.distance_rects_distance))
+
+        distance_points_x_y.append(
+            (int(self.position_absolute[0] + self.car_image.get_rect().width * 3 / 8 + self.distance_rects_distance),
+             int(self.position_absolute[
+                     1]) - self.car_image.get_rect().height / 2 - self.distance_rects_distance))
+
+        for cords in distance_points_x_y:
+            ratated_position = self.rotate(cords)
+
+            rec = pygame.Rect((int(ratated_position[0]), int(ratated_position[1])),
+                              (10 * self.scale_percent, 10 * self.scale_percent))
+
+            self.distance_rects.append(rec)
 
         # return rec
 
