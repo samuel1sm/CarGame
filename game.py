@@ -57,9 +57,10 @@ class Game:
                         if dp.rect.colliderect(wall.rect):
                             car.calculate_distace_to_wall(wall, i)
                             car.distance_rects[i].distance_from_colision_variable -= 1
-
+                        
                     if len(car.distances) != i+1:
-                        car.distance_rects[i].reset_distance_from_colision()
+                        if car.distance_rects[i].distance_from_colision_variable!=car.distance_rects[i].distance_from_colision_constant:
+                            car.distance_rects[i].distance_from_colision_variable +=1
                         car.distances.append(car.distance_rects[i].distance_from_colision_variable)
 
                 for rec in car.collision_rects:
