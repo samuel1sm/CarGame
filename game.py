@@ -55,19 +55,27 @@ class Game:
                 for i, dp in enumerate(car.distance_rects):
                     for wall in self.map.wall_list:
                         if dp.rect.colliderect(wall.rect):
-                            car.calculate_distace_to_wall(wall, i)
                             car.distance_rects[i].distance_from_colision_variable -= 1
-                        
-                    if len(car.distances) != i+1:
-                        if car.distance_rects[i].distance_from_colision_variable!=car.distance_rects[i].distance_from_colision_constant:
-                            car.distance_rects[i].distance_from_colision_variable +=1
-                        car.distances.append(car.distance_rects[i].distance_from_colision_variable)
+                            dist = car.calculate_distace_to_wall(car.colision_points_positions[i],
+                                                                 car.distance_rects[i].position)
+
+                            car.distances.append(dist)
+
+
+                    if len(car.distances) != i + 1:
+                        if not car.distance_rects[i].compare_variable_constant_is_equals():
+                            car.distance_rects[i].distance_from_colision_variable += 1
+                        dist = car.calculate_distace_to_wall(car.colision_points_positions[i],
+                                                             car.distance_rects[i].position)
+
+                        car.distances.append(dist)
 
                 for rec in car.collision_rects:
                     for wall in self.map.wall_list:
                         if rec.colliderect(wall.rect):
                             car.deactivate_car()
                             break
+
 
             # print(car.distances)
 
