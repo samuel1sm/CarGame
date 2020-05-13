@@ -5,7 +5,7 @@ from pygame.math import Vector2
 import random
 from GameObjects import Car, Wall, Map
 import math
-
+from CarAi import CarAi
 
 class Game:
     def __init__(self, map):
@@ -33,6 +33,8 @@ class Game:
 
         w, h = car_image.get_size()
 
+        carai = CarAi(5)
+
         while not self.exit:
             self.screen.fill((0, 0, 0))
 
@@ -49,27 +51,35 @@ class Game:
             if car.activated:
                 car.blit_rotate((w // 2, h // 2))
 
-                car.change_angle(pressed, dt)
+                valor = carai.predict(car.distances, car.max_distance)
+                
+                # print(valor)
+                # car.change_angle(pressed)
+                car.ai_change_angle(valor)
 
                 car.distances = []
                 for i, dp in enumerate(car.distance_rects):
                     for wall in self.map.wall_list:
                         if dp.rect.colliderect(wall.rect):
                             car.distance_rects[i].distance_from_colision_variable -= 1
-                            car.calculate_distace_to_wall(car.colision_points_positions[i],
-                                                                 car.distance_rects[i].position)
 
-                            car.distances.append(abs(car.distance_rects[i].distance_from_colision_variable))
+                            dist = car.distance_rects[i].distance_from_colision_variable
+                            if dist < 0:
+                                dist = 0
+                        
+                            car.distances.append(dist)
+                                    
                             break
 
 
                     if len(car.distances) != i + 1:
                         if not car.distance_rects[i].compare_variable_constant_is_equals():
                             car.distance_rects[i].distance_from_colision_variable += 1
-                        car.calculate_distace_to_wall(car.colision_points_positions[i],
-                                                             car.distance_rects[i].position)
-
-                        car.distances.append(abs(car.distance_rects[i].distance_from_colision_variable))
+                        dist = car.distance_rects[i].distance_from_colision_variable
+                        if dist < 0:
+                            dist = 0
+                    
+                        car.distances.append(dist)
 
                 for rec in car.collision_rects:
                     for wall in self.map.wall_list:
@@ -78,7 +88,6 @@ class Game:
                             break
 
 
-            print(car.distances)
 
             car.show_image(self.screen)
 

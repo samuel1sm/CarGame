@@ -29,16 +29,13 @@ class Car:
         self.left_origin = 0
         self.activated = True
         self.scale_percent = scale_percent
-        self.colision_points_positions = [(30,30),(30,30),(30,30),(30,30),(30,30)]
+        self.colision_points_positions = [(collision_rects_distance,collision_rects_distance) for _ in range(5)]
         self.collision_rects = []
+        self.max_distance = collision_rects_distance
         self.distance_rects = [
-            Car.Ditance_Points(collision_rects_distance, (10 * self.scale_percent, 10 * self.scale_percent)),
-            Car.Ditance_Points(collision_rects_distance, (10 * self.scale_percent, 10 * self.scale_percent)),
-            Car.Ditance_Points(collision_rects_distance, (10 * self.scale_percent, 10 * self.scale_percent)),
-            Car.Ditance_Points(collision_rects_distance, (10 * self.scale_percent, 10 * self.scale_percent)),
-            Car.Ditance_Points(collision_rects_distance, (10 * self.scale_percent, 10 * self.scale_percent))]
-
-        self.distances = [30,30,30,30,30]
+            Car.Ditance_Points(collision_rects_distance, (10 * self.scale_percent, 10 * self.scale_percent)) for _ in range(5)]
+        self.car_center = (0,0)
+        self.distances = [collision_rects_distance for _ in range(5)]
         self.car_image = car_image
 
     def make_collision_recs(self):
@@ -120,7 +117,7 @@ class Car:
             self.distance_rects[i].previous_position = self.distance_rects[i].position
             self.distance_rects[i].position = ratated_position
 
-    def change_angle(self, pressed, dt):
+    def change_angle(self, pressed):
         if pressed[pygame.K_d]:
             self.angle -= 1
         elif pressed[pygame.K_a]:
@@ -128,6 +125,15 @@ class Car:
 
         if pressed[pygame.K_w] or pressed[pygame.K_s]:
             self.position_absolute += (cos(radians(self.angle)) * 2, sin(radians(self.angle) * -1) * 2)
+    
+    def ai_change_angle(self, values):
+
+        self.angle += values[0][0]
+
+        new_position = (cos(radians(self.angle)) * values[0][1], sin(radians(self.angle) * -1) * values[0][1])
+
+        self.position_absolute += new_position
+
 
     def rotate(self, cords):
 
@@ -158,7 +164,7 @@ class Car:
         pivot = pygame.math.Vector2(originPos[0], -originPos[1])
         pivot_rotate = pivot.rotate(self.angle)
         pivot_move = pivot_rotate - pivot
-
+        self.car_center = pivot
         # calculate the upper left origin of the rotated image
         self.left_origin = (
             self.position_absolute[0] - originPos[0] + min_box[0] - pivot_move[0],
@@ -173,36 +179,34 @@ class Car:
     def deactivate_car(self):
         self.activated = False
 
-    def calculate_distace_to_wall(self, collison_position, distance_position):
-        x, y = collison_position
-        x_dp, y_dp = distance_position
-
-        # ptl = wall.rect.topleft
-        # ptr = wall.rect.topright
-        # pbl = wall.rect.bottomleft
-        # pbr = wall.rect.bottomright
-        #
-        # p_array = [ptl, ptr, pbl, pbr]
-        #
-        # dist_array = []
-        #
-        # for point in p_array:
-
-        dist = sqrt((x - x_dp) ** 2 + (y - y_dp) ** 2)
-        #     dist_array.append((dist, point))
-        #
-        # dist_array.sort(key=lambda tup: tup[0])
-        #
-        # p1 = dist_array[0][1]
-        # p2 = dist_array[1][1]
-        #
-        # a = p1[1] - p2[1]
-        # b = p2[0] - p1[0]
-        # c = p1[0] * p2[1] - p2[0] * p1[1]
-        #
-        # dist = (abs(a * x + b * y + c)) / (sqrt(a ** 2 + b ** 2))
-        # self.distances.append(dist)
-        return dist
+    # def calculate_distace_to_wall(self, collison_position, distance_position):
+    #     x, y = collison_position
+    #     x_dp, y_dp = distance_position
+    #     # ptl = wall.rect.topleft
+    #     # ptr = wall.rect.topright
+    #     # pbl = wall.rect.bottomleft
+    #     # pbr = wall.rect.bottomright
+    #     #
+    #     # p_array = [ptl, ptr, pbl, pbr]
+    #     #
+    #     # dist_array = []
+    #     #
+    #     # for point in p_array:
+    #     dist = sqrt((x - x_dp) ** 2 + (y - y_dp) ** 2)
+    #     #     dist_array.append((dist, point))
+    #     #
+    #     # dist_array.sort(key=lambda tup: tup[0])
+    #     #
+    #     # p1 = dist_array[0][1]
+    #     # p2 = dist_array[1][1]
+    #     #
+    #     # a = p1[1] - p2[1]
+    #     # b = p2[0] - p1[0]
+    #     # c = p1[0] * p2[1] - p2[0] * p1[1]
+    #     #
+    #     # dist = (abs(a * x + b * y + c)) / (sqrt(a ** 2 + b ** 2))
+    #     # self.distances.append(dist)
+    #     return dist
 
     def draw_car_rects(self, screen):
         for rec in self.collision_rects:
@@ -228,17 +232,27 @@ class Map:
             line = f.readline().split(",")
             self.wall_color = (int(line[1]), int(line[2]), int(line[3]))
             line = f.readline().split(",")
+            self.final_color = (int(line[1]), int(line[2]), int(line[3]))
+            line = f.readline().split(",")
             self.screen_size = (int(line[1]), int(line[2]))
             line = f.readline().split(",")
             self.screen_color = (int(line[1]), int(line[2]), int(line[3]))
 
             self.wall_list = []
 
+
             for j, line in enumerate(f.readlines()):
                 for i, obj in enumerate(line.split(",")):
                     if obj == "w":
                         self.wall_list.append(Wall((self.wall_size[0] * i, self.wall_size[1] * j), self.wall_size))
+                    elif obj == "f":
+                         self.final_position_rect = Wall((self.wall_size[0] * i, self.wall_size[1] * j), self.wall_size)
+                         self.final_position = (self.wall_size[0] * i, self.wall_size[1] * j)
 
     def draw_walls(self, screen):
         for wall in self.wall_list:
             pygame.draw.rect(screen, self.wall_color, wall.rect)
+
+        pygame.draw.rect(screen, self.final_color, self.final_position_rect.rect)
+
+        
