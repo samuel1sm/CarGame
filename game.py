@@ -38,7 +38,6 @@ class Game:
         while not self.exit:
             self.screen.fill((0, 0, 0))
 
-            dt = self.clock.get_time() / 1000
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -51,35 +50,21 @@ class Game:
             if car.activated:
                 car.blit_rotate((w // 2, h // 2))
 
-                valor = carai.predict(car.distances, car.max_distance)
-                
+
+                movement = carai.predict(car.distances, car.max_distance)
                 # print(valor)
-                # car.change_angle(pressed)
-                car.ai_change_angle(valor)
+                car.player_control(pressed)
+                # new_info = car.calculate_new_position(movement)
+                # car.set_new_infos(new_info)
+                
+                new_info = car.make_collision_recs()
+                car.update_colision_points_info(new_info)
+                new_info = car.make_distance_recs()
+                car.update_distance_rect(new_info)
 
-                car.distances = []
-                for i, dp in enumerate(car.distance_rects):
-                    for wall in self.map.wall_list:
-                        if dp.rect.colliderect(wall.rect):
-                            car.distance_rects[i].distance_from_colision_variable -= 1
-
-                            dist = car.distance_rects[i].distance_from_colision_variable
-                            if dist < 0:
-                                dist = 0
-                        
-                            car.distances.append(dist)
-                                    
-                            break
-
-
-                    if len(car.distances) != i + 1:
-                        if not car.distance_rects[i].compare_variable_constant_is_equals():
-                            car.distance_rects[i].distance_from_colision_variable += 1
-                        dist = car.distance_rects[i].distance_from_colision_variable
-                        if dist < 0:
-                            dist = 0
-                    
-                        car.distances.append(dist)
+                distance, new_position = self.map.calculate_distances(car.distance_rects)
+                car.distances =distance
+                car.distance_rects = new_position
 
                 for rec in car.collision_rects:
                     for wall in self.map.wall_list:
@@ -87,15 +72,10 @@ class Game:
                             car.deactivate_car()
                             break
 
-
-
             car.show_image(self.screen)
-
-            car.make_collision_recs()
-            car.make_distance_recs()
-
+            print(car.distances)
+            
             car.draw_car_rects(self.screen)
-
             w, h = car.car_image.get_size()
 
             pygame.display.flip()
