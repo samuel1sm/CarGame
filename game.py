@@ -18,6 +18,8 @@ class Game:
         self.exit = False
 
     def run(self):
+        if not os.path.exists("episodes"):
+            os.mkdir("episodes")
         current_dir = os.path.dirname(os.path.abspath(__file__))
         image_path = os.path.join(current_dir, "imgs/carro_feio.png")
         car_image = pygame.image.load(image_path)
@@ -27,7 +29,7 @@ class Game:
 
         car_image = pygame.transform.scale(car_image, (int(w * scale_percent), int(h * scale_percent)))
 
-        pos = map.initial_point
+        pos = self.map.initial_point
 
         car = Car(pos, car_image=car_image, scale_percent=scale_percent, collision_rects_distance=30)
 
@@ -35,6 +37,7 @@ class Game:
 
         carai = CarAi(5)
 
+        episode = 0
         while not self.exit:
             self.screen.fill((0, 0, 0))
 
@@ -53,9 +56,9 @@ class Game:
 
                 movement = carai.predict(car.distances, car.max_distance)
                 # print(valor)
-                car.player_control(pressed)
-                # new_info = car.calculate_new_position(movement)
-                # car.set_new_infos(new_info)
+                # car.player_control(pressed)
+                new_info = car.calculate_new_position(movement)
+                car.set_new_infos(new_info)
                 
                 new_info = car.make_collision_recs()
                 car.update_colision_points_info(new_info)
@@ -66,14 +69,30 @@ class Game:
                 car.distances =distance
                 car.distance_rects = new_position
 
+                next_state_movement = carai.predict(car.distances, car.max_distance)
+                new_angle,new_position = car.calculate_new_position(next_state_movement)
+                new_position = car.position_absolute + new_position 
+                distance_rects = car.make_distance_recs(new_position,new_angle)
+                distance, _ = self.map.calculate_distances(distance_rects)
+
+                carai.car_train((car.distances, car.position_absolute), (distance_rects, new_position))
+
+                if episode % 20 == 0:
+                    carai.model.save("episodes/ai_car_{}.h5".format(episode))
+                    lista =  os.listdir("episodes")
+                    if len(lista) == 40:
+                        os.remove(f"episodes/{lista[0]}") 
+                episode += 1
+
                 for rec in car.collision_rects:
                     for wall in self.map.wall_list:
                         if rec.colliderect(wall.rect):
-                            car.deactivate_car()
+                            car = Car(pos, car_image=car_image, scale_percent=scale_percent, collision_rects_distance=30)
+
                             break
 
             car.show_image(self.screen)
-            print(car.distances)
+            # print(car.distances)
             
             car.draw_car_rects(self.screen)
             w, h = car.car_image.get_size()

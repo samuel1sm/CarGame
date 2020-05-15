@@ -35,6 +35,7 @@ class Car:
         self.distance_rects = [
             Car.Ditance_Points(collision_rects_distance, (10 * self.scale_percent, 10 * self.scale_percent)) for _ in range(5)]
         self.car_center = (0,0)
+        self.car_init_position = Vector2(pos[0], pos[1])
         self.distances = [collision_rects_distance for _ in range(5)]
         self.car_image = car_image
 
@@ -43,7 +44,7 @@ class Car:
 
         new_angle = self.angle + values[0][0]
 
-        new_position = (cos(radians(new_angle)) * values[0][1]* 1.5, sin(radians(new_angle) * -1) * values[0][1]* 1.5)
+        new_position = (cos(radians(new_angle)) * values[0][1]* 5, sin(radians(new_angle) * -1) * values[0][1]* 5)
         
         return new_angle,new_position
         
@@ -193,6 +194,7 @@ class Car:
 
     def show_image(self, screen):
         rotated_image = pygame.transform.rotate(self.car_image, self.angle)
+        self.left_origin =  self.car_init_position if self.left_origin == 0 else self.left_origin
         screen.blit(rotated_image, self.left_origin)
 
     def deactivate_car(self):
@@ -215,8 +217,8 @@ class Wall(object):
 class Map:
     def __init__(self, file_name):
         with open(f"maps/{file_name}", 'r') as f:
-            line = f.readline().split(",")
-            self.initial_point = (int(line[1]), int(line[2]))
+            # line = f.readline().split(",")
+            # self.initial_point = (int(line[1]), int(line[2]))
             line = f.readline().split(",")
             self.wall_size = (int(line[1]), int(line[2]))
             line = f.readline().split(",")
@@ -236,8 +238,11 @@ class Map:
                     if obj == "w":
                         self.wall_list.append(Wall((self.wall_size[0] * i, self.wall_size[1] * j), self.wall_size))
                     elif obj == "f":
-                         self.final_position_rect = Wall((self.wall_size[0] * i, self.wall_size[1] * j), self.wall_size)
-                         self.final_position = (self.wall_size[0] * i, self.wall_size[1] * j)
+                        self.final_position_rect = Wall((self.wall_size[0] * i, self.wall_size[1] * j), self.wall_size)
+                        self.final_position = (self.wall_size[0] * i, self.wall_size[1] * j)
+                    elif obj == "c":
+                        self.initial_point = (self.wall_size[0] * i, self.wall_size[1] * j)
+
 
     def draw_walls(self, screen):
         for wall in self.wall_list:
